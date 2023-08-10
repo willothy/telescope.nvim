@@ -173,12 +173,37 @@ utils.is_path_hidden = function(opts, path_display)
     or type(path_display) == "table" and (vim.tbl_contains(path_display, "hidden") or path_display.hidden)
 end
 
-local URI_SCHEME_PATTERN = "^([a-zA-Z]+[a-zA-Z0-9.+-]*):.*"
-local WINDOWS_ROOT_PATTERN = "^[a-zA-Z]:\\"
 utils.is_uri = function(filename)
-  local is_uri_match = filename:match(URI_SCHEME_PATTERN) ~= nil
-  local is_windows_root_match = filename:match(WINDOWS_ROOT_PATTERN)
-  return is_uri_match and not is_windows_root_match
+  local i = 1
+  local code = string.byte(filename, i)
+
+  if code < 65 or (code > 90 and code < 97) or code > 122 then
+    return false
+  end
+
+  while i <= #filename do
+    code = string.byte(filename, i)
+    if
+      (code >= 65 and code <= 90)
+      or (code >= 97 and code <= 122)
+      or (code >= 48 and code <= 57)
+      or code == 43 -- `+`
+      or code == 46 -- `.`
+      or code == 45 -- `-`
+    then
+      i = i + 1
+    elseif code == 58 then -- `:`
+      break
+    else
+      return false
+    end
+  end
+
+  if string.byte(filename, i + 1) == 92 then -- `\`
+    return false
+  end
+
+  return true
 end
 
 local calc_result_length = function(truncate_len)
